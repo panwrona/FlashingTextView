@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="FlashingTextView">
+        <attr name="ftv_interval" format="integer"/>
+        <attr name="ftv_fromColor" format="color"/>
+        <attr name="ftv_toColor" format="color" />
+    </declare-styleable>
+</resources>
