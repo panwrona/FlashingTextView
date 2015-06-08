@@ -1,4 +1,4 @@
-package pl.panwrona.flashingtextview.widget;
+package io.panwrona.flashingtextview;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -11,10 +11,7 @@ import android.os.Parcelable;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.widget.TextView;
-
-import pl.panwrona.flashingtextview.R;
 
 public class FlashingTextView extends TextView {
 

@@ -1,15 +1,24 @@
 apply plugin: 'com.android.application'
+apply plugin: 'android-maven'
 
 android {
+    signingConfigs {
+        config {
+            keyAlias 'PanWronaAndroidKey'
+            keyPassword 'crow1990'
+            storeFile file('/home/mariusz/android.jks')
+            storePassword 'crow1990'
+        }
+    }
     compileSdkVersion 22
     buildToolsVersion "22.0.1"
-
     defaultConfig {
         applicationId "pl.panwrona.flashingtextview"
         minSdkVersion 11
         targetSdkVersion 22
         versionCode 1
         versionName "1.0"
+        signingConfig signingConfigs.config
     }
     buildTypes {
         release {
@@ -17,9 +26,20 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    productFlavors {
+    }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     compile 'com.android.support:appcompat-v7:22.2.0'
+    compile project(':library')
+}
+
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+artifacts {
+    archives sourcesJar
 }
