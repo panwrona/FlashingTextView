@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -22,10 +23,8 @@ public class FlashingTextView extends TextView {
     private int mToColor = 0;
 
     private boolean isFlashing;
-    private boolean isConfigurationChanged;
 
     private State mState;
-    private SavedStateManager mSavedStateManager;
     private AnimatorSet mAnimatorSet;
     private ValueAnimator mSecondAnimation;
     private ValueAnimator mFirstAnimation;
@@ -35,7 +34,7 @@ public class FlashingTextView extends TextView {
     }
 
     private enum State {
-        READY, FLASHING
+        READY, START, STOP
     }
 
     public FlashingTextView(Context context) {
@@ -49,7 +48,6 @@ public class FlashingTextView extends TextView {
     }
 
     private void init(Context context, AttributeSet attrs) {
-        mSavedStateManager = new SavedStateManager(this);
         TypedArray array = context.obtainStyledAttributes(attrs, R.styleable.FlashingTextView, 0, 0);
         try {
             mInterval = array.getInteger(R.styleable.FlashingTextView_ftv_interval, 0);
@@ -89,12 +87,12 @@ public class FlashingTextView extends TextView {
 
             @Override
             public void onAnimationStart(Animator animation) {
-                mState = State.FLASHING;
+                mState = State.START;
             }
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                if(mState == State.FLASHING) {
+                if (mState == State.START) {
                     animation.start();
                 }
             }
@@ -118,21 +116,43 @@ public class FlashingTextView extends TextView {
             mAnimatorSet.start();
     }
 
+    public void stop() {
+        if(mAnimatorSet == null)
+            throw new IllegalStateException("Animations are not prepared");
+        else {
+            mState = State.STOP;
+            mAnimatorSet.end();
+        }
+    }
+
     public void end() {
         if(mAnimatorSet == null)
             throw new IllegalStateException("Animations are not prepared");
         else {
             mState = State.READY;
-            mAnimatorSet.end();
         }
+    }
+
+    public void setFromColor(@ColorInt int color) {
+        mFromColor = color;
+        prepareAnimations();
+    }
+
+    public void setToColor(@ColorInt int color) {
+        mToColor = color;
+        prepareAnimations();
+    }
+
+    public void setInterval(int interval) {
+        mInterval = interval;
+        prepareAnimations();
     }
 
     @Override
     public Parcelable onSaveInstanceState() {
         Parcelable superState = super.onSaveInstanceState();
         SavedState savedState = new SavedState(superState);
-        savedState.isFlashing = mState == State.FLASHING;
-        savedState.isConfigurationChanged = true;
+        savedState.isFlashing = mState == State.START;
         savedState.mmCurrentPlayTime = mFirstAnimation.getCurrentPlayTime() > 0 ? mFirstAnimation.getCurrentPlayTime() : mSecondAnimation.getCurrentPlayTime() ;
         return savedState;
     }
@@ -141,19 +161,33 @@ public class FlashingTextView extends TextView {
     public void onRestoreInstanceState(Parcelable state) {
         if (state instanceof SavedState) {
             SavedState savedState = (SavedState) state;
-            isConfigurationChanged = savedState.isConfigurationChanged;
             isFlashing = savedState.isFlashing;
             super.onRestoreInstanceState(savedState.getSuperState());
-//            if(isFlashing) {
-//                continueFlashing(savedState.mmCurrentPlayTime);
-//            }
+            if(isFlashing) {
+                continueFlashing(savedState.mmCurrentPlayTime, savedState.mmCurrentAnimation);
+            } else if(mState == State.STOP) {
+                setStoppedFlashingPosition(savedState.mmCurrentPlayTime, savedState.mmCurrentAnimation);
+            }
         } else {
             super.onRestoreInstanceState(state);
         }
     }
 
-    private void continueFlashing(long mmCurrentPlayTime) {
-        Log.d("FlashingTxtV", "Current play time: " + mmCurrentPlayTime);
+    private void setStoppedFlashingPosition(long mmCurrentPlayTime, int mmCurrentAnimation) {
+        if(mmCurrentAnimation == 0) {
+            mFirstAnimation.setCurrentPlayTime(mmCurrentPlayTime);
+        } else {
+            mSecondAnimation.setCurrentPlayTime(mmCurrentPlayTime);
+        }
+    }
+
+    private void continueFlashing(long mmCurrentPlayTime, int mmCurrentAnimation) {
+        if(mmCurrentAnimation == 0) {
+            mFirstAnimation.setCurrentPlayTime(mmCurrentPlayTime);
+        } else {
+            mSecondAnimation.setCurrentPlayTime(mmCurrentPlayTime);
+        }
+        mAnimatorSet.start();
     }
 
     static class SavedState extends BaseSavedState {
@@ -161,12 +195,14 @@ public class FlashingTextView extends TextView {
         private boolean isFlashing;
         private boolean isConfigurationChanged;
         private long mmCurrentPlayTime;
+        private int mmCurrentAnimation;
 
         public SavedState(Parcel source) {
             super(source);
             isFlashing = source.readInt() == 1;
             isConfigurationChanged = source.readInt() == 1;
             mmCurrentPlayTime = source.readLong();
+            mmCurrentAnimation = source.readInt();
         }
 
         public SavedState(Parcelable superState) {
