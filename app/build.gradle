@@ -1,13 +1,25 @@
 apply plugin: 'com.android.application'
-apply plugin: 'android-maven'
+apply plugin: 'com.github.dcendents.android-maven'
+
+def versionMajor = 1
+def versionMinor = 0
+def versionPatch = 1
+def versionBuild = 0
 
 android {
     signingConfigs {
+        release {
+            keyAlias storeKeyAlias
+            keyPassword aliasKeyPassword
+            storeFile file(storeFilePath)
+            storePassword keystorePassword
+        }
+
         config {
-            keyAlias 'PanWronaAndroidKey'
-            keyPassword 'crow1990'
-            storeFile file('/home/mariusz/android.jks')
-            storePassword 'crow1990'
+            keyAlias storeKeyAlias
+            keyPassword aliasKeyPassword
+            storeFile file(storeFilePath)
+            storePassword keystorePassword
         }
     }
     compileSdkVersion 22
@@ -16,8 +28,8 @@ android {
         applicationId "pl.panwrona.flashingtextview"
         minSdkVersion 11
         targetSdkVersion 22
-        versionCode 1
-        versionName "1.0"
+        versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
+        versionName "${versionMajor}.${versionMinor}.${versionPatch}"
         signingConfig signingConfigs.config
     }
     buildTypes {
